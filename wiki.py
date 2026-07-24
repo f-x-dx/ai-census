@@ -226,7 +226,7 @@ def lint(report, now=None):
         if not last:
             continue
         try:
-            age = (now - datetime.fromisoformat(last)).days
+            age = (now - datetime.fromisoformat(last.replace("Z", "+00:00"))).days
         except ValueError:
             continue
         recorded = str(a.get("signals", {}).get("last_commit", ""))[:10]

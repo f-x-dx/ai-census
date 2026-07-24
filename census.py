@@ -95,6 +95,13 @@ def now_utc():
     return datetime.now(timezone.utc)
 
 
+def parse_iso(ts):
+    """ISO 8601 -> aware datetime. Newer git emits UTC as '...Z', which
+    Python < 3.11 fromisoformat cannot parse — normalize it."""
+    d = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
 def deident(value, salt, enabled):
     """Stable pseudonym for a person identifier. Team/asset names pass through."""
     if not enabled or not value:
@@ -241,8 +248,7 @@ def adapter_repos_local(root, dei, salt):
         status = "unknown"
         if last_iso:
             try:
-                last_dt = datetime.fromisoformat(last_iso)
-                age = (now_utc() - last_dt).days
+                age = (now_utc() - parse_iso(last_iso)).days
                 if age > STALLED_DAYS:
                     status = "stalled"
                 elif deploy or ci:

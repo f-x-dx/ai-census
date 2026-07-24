@@ -462,6 +462,12 @@ class TestHardening(unittest.TestCase):
             ok = census.check_config({"org": "X", "sources": []}, td)
             self.assertEqual(ok, [])
 
+    def test_z_suffix_timestamps_parse_on_py39(self):
+        # newer git emits UTC as '...Z'; Python <3.11 fromisoformat rejects it
+        d = census.parse_iso("2026-07-24T15:52:24Z")
+        self.assertIsNotNone(d.tzinfo)
+        self.assertEqual(census.parse_iso("2026-07-24T15:52:24+00:00"), d)
+
     def test_gitlab_refuses_plain_http(self):
         with self.assertRaises(census.CensusError):
             census.adapter_repos_gitlab("g", "http://gl.internal", "T", False, "s")
