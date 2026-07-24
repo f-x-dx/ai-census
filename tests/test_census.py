@@ -16,6 +16,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAMPLES = os.path.join(ROOT, "samples")
 
 
+GIT_ID = ["-c", "user.name=t", "-c", "user.email=t@x.co",
+          "-c", "commit.gpgsign=false"]
+
+
 def make_fake_repo(parent, name, files, commit=True):
     repo = os.path.join(parent, name)
     os.makedirs(repo)
@@ -26,10 +30,16 @@ def make_fake_repo(parent, name, files, commit=True):
             f.write(content)
     subprocess.run(["git", "init", "-q", repo], check=True)
     if commit:
-        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@x.co",
-                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@x.co")
-        subprocess.run(["git", "-C", repo, "add", "-A"], check=True, env=env)
-        subprocess.run(["git", "-C", repo, "commit", "-qm", "init"], check=True, env=env)
+        subprocess.run(["git", "-C", repo] + GIT_ID + ["add", "-A"], check=True)
+        subprocess.run(["git", "-C", repo] + GIT_ID + ["commit", "-qm", "init"],
+                       check=True)
+        # self-verify: the adapters depend on `git log` working here — fail
+        # loudly with git's own stderr instead of a downstream assert
+        r = subprocess.run(["git", "-C", repo, "log", "-1", "--format=%cI"],
+                           capture_output=True, text=True)
+        if r.returncode != 0 or not r.stdout.strip():
+            raise RuntimeError("fake repo unusable (git log rc=%d): %s"
+                               % (r.returncode, r.stderr.strip()))
     return repo
 
 

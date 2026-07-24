@@ -21,6 +21,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Run tests (stdlib only — no pip install)
+        env:
+          CENSUS_DEBUG: "1"
         run: python3 -m unittest discover -s tests -v
       - name: Build single-file artifact
         run: python3 census.py dist --out dist/census.pyz

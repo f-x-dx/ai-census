@@ -164,8 +164,13 @@ def _git(repo, *args):
     try:
         r = subprocess.run(["git", "-C", repo] + list(args),
                            capture_output=True, text=True, timeout=30)
+        if r.returncode != 0 and os.environ.get("CENSUS_DEBUG"):
+            log("debug: git %s in %s failed rc=%d: %s"
+                % (args[0], repo, r.returncode, r.stderr.strip()[:200]))
         return r.stdout.strip() if r.returncode == 0 else ""
-    except Exception:
+    except Exception as e:
+        if os.environ.get("CENSUS_DEBUG"):
+            log("debug: git %s in %s raised %s" % (args[0], repo, e))
         return ""
 
 
