@@ -1,0 +1,9 @@
+builder_name,team,asset_name,description,job_to_be_done,tools_used,who_uses_it,status,link
+Ada Okafor,Sales Ops,Call Notes Summarizer,Summarizes sales call transcripts into CRM-ready notes,Save reps 30 min per call writing notes,Claude Code; custom GPT,12 reps on my team,shipped,
+Ben Liu,Research,Research Digest Bot,Weekly digest summarizing new industry reports per sector,Stay current without manual reading,Microsoft Copilot,just me,active,
+Carla Mendes,Marketing,Brief Summarizer,Turns long campaign briefs into one-page summaries,Faster brief reviews,ChatGPT custom GPT,me and 2 colleagues,active,
+Dev Patel,Data Science,Pipeline Dashboard,Auto-generated sales pipeline dashboards from CRM CSVs,Stop hand-building weekly pipeline decks,Cursor; Python,my pod (5),shipped,
+Erin Walsh,Marketing,Claims Pre-Checker,Flags risky claims in draft copy before legal review,Cut legal review round-trips,no-code agent (Copilot Studio),tried it twice,stalled,
+Farid Khan,Sales Ops,Meeting Prep Assistant,Compiles account background and next-best-action before customer meetings,Reps walk in prepared,Claude Code,8 reps,shipped,
+Gina Rossi,Ops,Meeting Summarizer,Summarizes internal meetings and emails action items,Nobody reads long recaps,Microsoft Copilot,my department (~40),shipped,
+Hank Moody,Commercial,Competitor News Digest,Daily competitor headlines summarized to Slack,Stay ahead of competitor moves,Zapier + GPT,idea only,idea,

@@ -1,0 +1,45 @@
+{
+  "org": "Acme Corp",
+  "out": "out/acme",
+  "deidentify": true,
+  "salt": "acme-census-2026",
+
+  "sources": [
+    { "type": "repos-local",  "path": "~/checkouts" },
+    { "type": "repos-github", "org": "acme-corp" },
+    { "type": "repos-gitlab", "group": "acme/platform",
+      "base_url": "https://gitlab.acme.internal", "token_env": "GITLAB_TOKEN" },
+
+    { "type": "usage-csv", "vendor": "Claude",         "profile": "claude",  "path": "exports/claude_admin.csv" },
+    { "type": "usage-csv", "vendor": "GitHub Copilot", "profile": "copilot", "path": "exports/copilot_seats.csv" },
+    { "type": "usage-csv", "vendor": "Misc AI SaaS",   "profile": "generic", "path": "exports/saas_spend.csv" },
+
+    { "type": "survey-csv", "path": "exports/builder_survey.csv" },
+    { "type": "docs",       "path": "exports/wiki-tools-pages" },
+
+    { "type": "db", "label": "app-registry", "transport": "sqlite",
+      "path": "exports/app_registry.db",
+      "query": "SELECT app_name, summary, owner_email, dept, lifecycle, url, monthly_cost FROM apps WHERE uses_ai = 1",
+      "map": { "name": "app_name", "description": "summary", "owners": "owner_email",
+               "team": "dept", "status": "lifecycle", "link": "url",
+               "spend_monthly": "monthly_cost" } },
+
+    { "type": "db", "label": "cmdb", "transport": "command", "format": "csv",
+      "command": ["psql", "-h", "cmdb.acme.internal", "-U", "census_ro", "-d", "cmdb",
+                  "-c", "COPY (SELECT name, description, owner, team FROM ai_tools) TO STDOUT WITH CSV HEADER"],
+      "map": { "owners": "owner" } }
+  ],
+
+  "initiatives_file": "initiatives.txt",
+  "initiatives": [
+    "An extra initiative can also be listed inline"
+  ],
+
+  "extend": {
+    "stalled_days": 120,
+    "harness_fingerprints": { "acme-internal-agent": ["ACME_AGENT.yaml", ".acme-agent"] },
+    "usage_profiles": { "acme-gateway": { "employee_id": "user", "calls": "requests" } },
+    "survey_columns": { "what_did_you_automate": "description" },
+    "category_keywords": { "incident-response": ["incident intake", "on-call", "postmortem"] }
+  }
+}

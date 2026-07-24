@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run tests (stdlib only — no pip install)
+        run: python3 -m unittest discover -s tests -v
+      - name: Build single-file artifact
+        run: python3 census.py dist --out dist/census.pyz
+      - name: Smoke-test the artifact
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          python3 "$GITHUB_WORKSPACE/dist/census.pyz" init --org "CI" --non-interactive
+          if python3 "$GITHUB_WORKSPACE/dist/census.pyz" check --config census.json; then
+            echo "check unexpectedly passed with no exports present" && exit 1
+          fi
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build artifact
+        run: |
+          python3 census.py dist --out dist/census.pyz
+          shasum -a 256 dist/census.pyz > dist/census.pyz.sha256
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" dist/census.pyz dist/census.pyz.sha256 --clobber \
+            || gh release create "${GITHUB_REF_NAME}" dist/census.pyz dist/census.pyz.sha256 \
+                 --title "AI Census ${GITHUB_REF_NAME}" --generate-notes

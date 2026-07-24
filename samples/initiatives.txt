@@ -1,0 +1,6 @@
+# Stated initiatives (one per line) — the census checks coverage against these
+Reduce legal review time on marketing assets
+Sales meeting preparation and follow-up automation
+Sales pipeline reporting
+Competitive intelligence monitoring across markets
+Automated support ticket intake triage

@@ -1,0 +1,8 @@
+email_address,role,seat_type,last_active,messages_sent
+ada.okafor@example.com,Developer,premium,2026-07-20,1420
+ben.liu@example.com,Developer,premium,2026-07-21,980
+carla.mendes@example.com,Analyst,standard,2026-04-02,12
+dev.patel@example.com,Developer,premium,2026-07-19,2210
+erin.walsh@example.com,Marketing,standard,2026-03-15,4
+farid.khan@example.com,Developer,premium,2026-07-22,1875
+gina.rossi@example.com,PM,standard,2026-05-01,45
