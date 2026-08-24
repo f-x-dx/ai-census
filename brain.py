@@ -5,7 +5,7 @@ AI Census — second-brain graph layer.
 Turns a census report.json into a knowledge graph: how the org's assets,
 people, teams, harnesses, clusters, initiatives, and notes actually connect.
 Emits graph.json (machine) and graph.html (self-contained interactive viewer,
-zero external dependencies — safe inside client walls).
+zero external dependencies — safe inside your own walls).
 
 Node types: asset · person · team · harness · cluster · initiative
 Edge types: member_of · built_by · owned_by · built_with · covers · gap ·

@@ -1,9 +1,9 @@
-# AI Census — Scoping Document
+# AI Census — Architecture
 
-> Client-facing positioning lives in [POSITIONING.md](POSITIONING.md).
-> This document is the working scope: architecture, privacy, runbook.
+> The why lives in [POSITIONING.md](POSITIONING.md).
+> This document covers architecture, privacy posture, and how to run one.
 
-**What this is:** the working scope for running an AI Census inside a large
+**What this is:** how the AI Census works inside a large
 organization — the pattern engine that turns "everybody is playing with AI,
 nobody is running it" into a governed portfolio decision. Vendor-neutral, runs
 inside the org's own walls, and the org owns every byte of output.
@@ -12,7 +12,7 @@ inside the org's own walls, and the org owns every byte of output.
 
 ## 1. The problem this instrument measures
 
-The client situation this was scoped against is the industry situation:
+The situation this was built for is the common one:
 
 - **Heavy but fragmented adoption.** Multiple harnesses in live use — Cursor, GitHub
   Copilot, Claude Code, Microsoft Copilot, custom GPTs, no-code agents — with
@@ -69,7 +69,7 @@ The tool must never assume one vendor's harness. Concretely:
         transports:
           a. local `claude` CLI  (claude -p, JSON out)
           b. --emit-inventory / --analysis file round-trip: ANY harness or
-             in-VPC endpoint (Bedrock, api.anthropic.com, an analyst) produces
+             in-VPC endpoint (Bedrock, api.anthropic.com, a reviewer) produces
              the analysis against a documented contract
           c. run as a Claude Code skill: the session's own model IS the engine
                        │
@@ -105,7 +105,7 @@ repos, subscriptions, and survey rows uniformly:
 |---|---|---|---|
 | **repos-github / -gitlab** | repo metadata, root file listing, README, commit dates | read-only org token (`read:org`, repo metadata) | Low — no source code content beyond READMEs |
 | **repos-local** | a directory of checkouts (air-gapped alternative) | filesystem only | Same |
-| **usage-csv** | Claude admin analytics export; Copilot seat/usage export; any vendor CSV via the generic profile (`user/tool/spend/seats/last_active` column synonyms) | admin-portal export, done by client admin | Medium — contains emails → de-identify |
+| **usage-csv** | Claude admin analytics export; Copilot seat/usage export; any vendor CSV via the generic profile (`user/tool/spend/seats/last_active` column synonyms) | admin-portal export, done by an org admin | Medium — contains emails → de-identify |
 | **survey-csv** | builder survey: builder, team, asset, description, job-to-be-done, tools used, who uses it, status, link | a form (MS Forms/Google) exported to CSV | Medium — names → de-identify |
 | **docs-markdown** | wiki/Notion/Confluence export of internal-tool pages | export, optional | Low-medium |
 | **repos-gitlab** | project metadata + root tree from any GitLab instance | read-only group token via env var | Low |
@@ -149,9 +149,9 @@ review, internal catalog listing).
    the org's own Claude endpoint (their AWS Bedrock deployment or an approved API key). Fully air-gapped mode exists:
    local checkouts + `--no-llm` (deterministic heuristics only), or the
    `--emit-inventory` / `--analysis` round-trip through whatever approved
-   model endpoint they designate.
-2. **Client owns the output.** Reports are files in their environment. We take
-   methodology home, never data.
+   model endpoint you designate.
+2. **You own the output.** Reports are files in your environment. Nothing is
+   uploaded, phoned home, or retained anywhere else.
 3. **De-identification.** `--deidentify` replaces every person identifier (emails,
    names) with stable salted pseudonyms (`person-3fa2c8d1`) before anything reaches
    the pattern engine or the report — stable, so "the same person built three of
@@ -161,55 +161,56 @@ review, internal catalog listing).
    regulated data, or content repositories. The survey instructions explicitly
    prohibit pasting confidential data; the
    docs adapter is scoped to internal-tools pages only.
-5. **Read-only everywhere.** The tool never writes to any client system; the org
+5. **Read-only everywhere.** The tool never writes to any system it reads; the
    token is read-only; the audit trail is the report.json itself (which verdict,
    from which evidence, when).
 6. **Human-in-the-loop.** The four-bucket map is a recommendation instrument.
    Nothing is sunset, merged, or scaled by the tool — decisions happen in the
-   readout with the org's AI governance body, with a human in the loop
+   review with whoever governs AI in your org, with a human in the loop
    throughout.
 
 ---
 
-## 4. Engagement runbook — weeks 2–3 of the census
+## 4. Running a census
 
-**Week 2 — collect.**
-- *Day 1:* Kickoff with the org's AI transformation team. Confirm scope (which orgs, which vendors,
-  which business units), obtain read-only org token, agree the de-identification
-  salt holder, and get the stated-initiative list (their priority AI
-  projects become `initiatives.txt`).
-- *Days 1–2:* Client admins pull vendor exports (Claude admin analytics, Copilot
-  seat report, any other AI SaaS CSV). We map columns to profiles on a call —
-  the generic adapter means no vendor blocks us.
-- *Days 2–5:* Builder survey in the field. Distribution through the org's
-  internal AI community channels ("show us your shadow portfolio — amnesty framing: nothing
-  gets taken away, good tools get resourced"). The amnesty framing is load-bearing:
-  the census fails if people hide their side-tools.
-- *Day 5:* First repo sweep runs (minutes, read-only). Heuristic report v0 exists
-  by end of week — sanity-checks the data before any LLM pass.
+The tool runs in minutes. The work around it is collection and review, and most
+orgs spread that over about two weeks.
 
-**Week 3 — analyze and land.**
-- *Days 1–2:* Full census runs with the Claude pattern pass inside their
-  environment. Analyst review of every MERGE/SUNSET verdict against the evidence
-  (the guardrailed engine proposes; humans confirm).
-- *Day 3:* Working session with the org's core AI team: walk the duplicate clusters
-  and gap list, pressure-test with people who know the assets.
-- *Day 4:* Re-run with corrections (survey stragglers, disputed verdicts overridden
-  in the analysis file — the round-trip design makes analyst overrides first-class).
-- *Day 5:* Readout: the four-bucket map, the top-5 distribution-path candidates,
-  the consolidation savings estimate, and the BUILD list ranked against their
-  stated initiatives. Deliverables: report.md (exec), report.json (their data
-  team), and the tool itself — it stays with them, re-runnable quarterly.
+**Collect.**
 
-**Cadence after:** the census is designed to be re-run (quarterly), so the four-bucket
-map becomes a governance instrument, not a one-time audit — the same "one shared
-platform, one governing team" pattern peer enterprises keep landing on.
+- Agree the scope: which orgs, which vendors, which business units. Get a
+  read-only token for your git host and decide who holds the de-identification
+  salt.
+- Write your priority AI projects into `initiatives.txt`. Gap analysis is scored
+  against them, so this list is what "white space" gets measured from.
+- Pull seat and usage exports from each AI vendor. Any CSV works, because the
+  generic profile maps column synonyms rather than requiring a per-vendor
+  integration.
+- Run the builder survey. Distribution matters more than the questions: announce
+  it as amnesty, not audit. Nothing gets taken away, good tools get resourced.
+  The census fails if people hide their side-tools.
+- Sweep the repos. Read-only, minutes. You have a heuristic report before any
+  model runs, which is your sanity check on the data.
+
+**Review.**
+
+- Run the full census with the pattern pass inside your environment.
+- Have people check every MERGE and SUNSET verdict against the evidence. The
+  engine proposes, humans confirm. Disputed verdicts are overridden in the
+  analysis file, and those overrides are first-class in the round-trip design.
+- Walk the duplicate clusters and the gap list with the people who own the
+  assets. They know things the evidence does not show.
+- Re-run with corrections.
+
+**Then keep it.** The census is built to be re-run quarterly, with `wiki.py lint`
+monthly in between. That is the difference between a governance instrument and a
+one-time audit.
 
 ---
 
 ## 5. Second-brain methodology (after Karpathy)
 
-Two reference points shape how the census stays alive after the engagement
+Two reference points shape how the census stays alive after the first run
 (sources: Karpathy's LLM-wiki method, via askglitch.com/blog/build-a-second-brain,
 and github.com/karpathy/autoresearch):
 
@@ -238,10 +239,9 @@ a governance instrument instead of a stale audit.
 
 **The autoresearch frame.** Karpathy's autoresearch loop — one editable
 artifact, a fixed time budget, a single metric, keep-or-discard, log
-everything — is the governance model the census should leave behind at the
-client. The shipped-vs-stalled sprawl the census measures is exactly what
+everything — is the governance model the census is designed to leave behind. The shipped-vs-stalled sprawl the census measures is exactly what
 happens when experiments have no metric and no keep/discard discipline. The
-readout recommendation: every internal AI experiment declares its metric and
+recommendation: every internal AI experiment declares its metric and
 budget up front; the census lint becomes the keep/discard log. (It's also how
 we improve the census engine itself: the analysis contract is our
 `program.md` — iterate on the prompt against a benchmark corpus, keep what
@@ -249,11 +249,11 @@ scores better.)
 
 ## 6. Prototype status & known limits
 
-Working prototype in this repo (`census.py`, tests in `tests/`), dry-run against
-Integral Studio's own ~/Dev org (29 real repos + sample usage/survey CSVs):
-correctly surfaced the real clone-sprawl (4 tracker checkouts, duplicated agents
-repos, 2 rex-bot clones), the 5-instance gated-deck pattern, the cross-vendor
-summarizer duplicate, idle-seat SUNSET calls, and true white-space gaps. Output:
+Working prototype in this repo (`census.py`, tests in `tests/`), dry-run against a
+real developer org of 29 repos plus sample usage and survey CSVs: it correctly
+surfaced genuine clone sprawl (several checkouts of one project, duplicated
+tooling repos), a five-instance copy-paste pattern, a cross-vendor summarizer
+duplicate, idle-seat SUNSET calls, and true white-space gaps. Output:
 `out/dryrun-llm/report.md`.
 
 Since the first cut (all landed and tested):
@@ -267,7 +267,7 @@ Since the first cut (all landed and tested):
 - **Second-brain graph** (`--graph` / `brain.py`) — the census as a knowledge
   graph: assets, people, teams, harnesses, clusters, initiatives, explicit
   note links, and content-similarity edges, rendered as a self-contained
-  interactive `graph.html` (no CDN, safe in-VPC). In the readout this is the
+  interactive `graph.html` (no CDN, safe in-VPC). In review this is the
   exploration surface; report.md is the decision surface.
 - **Content-stable asset ids** — ids are hashes of source+name, not positions,
   so an analysis produced against one inventory can never silently re-bind

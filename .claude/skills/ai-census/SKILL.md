@@ -16,8 +16,8 @@ normalizes evidence; you do the semantic reasoning. Never shell out to a nested
    it declares all sources — local checkouts, GitHub orgs, GitLab groups,
    usage CSVs, surveys, docs, and databases (sqlite directly, any other DB via
    its CLI + a column map) — plus initiatives and org-specific extensions.
-   If none exists, offer to write one from what the user describes. For client
-   work, default de-identification ON. Never put tokens or passwords in the
+   If none exists, offer to write one from what the user describes. When the
+   data covers real people, default de-identification ON. Never put tokens or passwords in the
    config; DB and GitLab credentials come from env vars, and DB accounts
    should be read-only.
 
@@ -59,5 +59,5 @@ normalizes evidence; you do the semantic reasoning. Never shell out to a nested
 - Read-only toward the org: never modify scanned repos.
 - Never put real names/emails in the report when `--deidentify` is on — if you
   see one in inventory.json, the adapter missed it; flag it, don't propagate it.
-- Verdicts are recommendations for a human readout, not actions. Never delete,
+- Verdicts are recommendations for a human review, not actions. Never delete,
   archive, or cancel anything based on a SUNSET verdict.
