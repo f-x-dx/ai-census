@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import census  # noqa: E402
@@ -18,6 +19,41 @@ SAMPLES = os.path.join(ROOT, "samples")
 
 GIT_ID = ["-c", "user.name=t", "-c", "user.email=t@x.co",
           "-c", "commit.gpgsign=false"]
+
+
+# Seat inactivity is measured against "now", so any fixture with hardcoded dates
+# silently rots into failure once it drifts past the 30-day window. Fixtures below
+# are written relative to today instead.
+def days_ago(n, stamp=False):
+    d = datetime.now(timezone.utc) - timedelta(days=n)
+    return d.strftime("%Y-%m-%dT%H:%M:%SZ") if stamp else d.strftime("%Y-%m-%d")
+
+
+ACTIVE, IDLE = 3, 150
+
+
+def write_csv(path, header, rows):
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(header + "\n")
+        for r in rows:
+            fh.write(",".join(r) + "\n")
+    return path
+
+
+def claude_csv(dirpath, people):
+    """people: list of (name, days_since_active)."""
+    return write_csv(
+        os.path.join(dirpath, "claude.csv"),
+        "email_address,role,seat_type,last_active,messages_sent",
+        [["%s@example.com" % n, "Developer", "premium", days_ago(d), "100"]
+         for n, d in people])
+
+
+def copilot_csv(dirpath, people):
+    return write_csv(
+        os.path.join(dirpath, "copilot.csv"),
+        "login,plan_type,last_activity_at,last_activity_editor",
+        [[n, "business", days_ago(d, stamp=True), "vscode"] for n, d in people])
 
 
 def make_fake_repo(parent, name, files, commit=True):
@@ -85,20 +121,35 @@ class TestRepoAdapter(unittest.TestCase):
 
 
 class TestUsageAdapter(unittest.TestCase):
+    def test_shipped_samples_still_parse(self):
+        """Smoke test on the samples we ship, without asserting time-dependent counts."""
+        for name, label, profile in [("usage_claude.csv", "Claude", "claude"),
+                                     ("usage_copilot.csv", "GitHub Copilot", "copilot")]:
+            assets = census.adapter_usage_csv(
+                os.path.join(SAMPLES, name), label, profile, False, "s")
+            self.assertEqual(len(assets), 1)
+            self.assertEqual(assets[0]["signals"]["seats"], 7)
+
     def test_claude_profile_inactivity(self):
-        assets = census.adapter_usage_csv(
-            os.path.join(SAMPLES, "usage_claude.csv"), "Claude", "claude", False, "s")
-        self.assertEqual(len(assets), 1)
-        a = assets[0]
-        self.assertEqual(a["signals"]["seats"], 7)
-        self.assertEqual(a["signals"]["inactive_30d"], 3)  # carla, erin, gina
+        with tempfile.TemporaryDirectory() as td:
+            path = claude_csv(td, [("ada", ACTIVE), ("ben", ACTIVE), ("carla", IDLE),
+                                   ("dev", ACTIVE), ("erin", IDLE), ("farid", ACTIVE),
+                                   ("gina", IDLE)])
+            assets = census.adapter_usage_csv(path, "Claude", "claude", False, "s")
+            self.assertEqual(len(assets), 1)
+            a = assets[0]
+            self.assertEqual(a["signals"]["seats"], 7)
+            self.assertEqual(a["signals"]["inactive_30d"], 3)  # carla, erin, gina
 
     def test_copilot_profile_mostly_inactive(self):
-        assets = census.adapter_usage_csv(
-            os.path.join(SAMPLES, "usage_copilot.csv"), "GitHub Copilot", "copilot", False, "s")
-        a = assets[0]
-        self.assertEqual(a["signals"]["seats"], 7)
-        self.assertEqual(a["signals"]["inactive_30d"], 5)
+        with tempfile.TemporaryDirectory() as td:
+            path = copilot_csv(td, [("ada", ACTIVE), ("ben", IDLE), ("carla", IDLE),
+                                    ("dev", ACTIVE), ("erin", IDLE), ("gina", IDLE),
+                                    ("hank", IDLE)])
+            assets = census.adapter_usage_csv(path, "GitHub Copilot", "copilot", False, "s")
+            a = assets[0]
+            self.assertEqual(a["signals"]["seats"], 7)
+            self.assertEqual(a["signals"]["inactive_30d"], 5)
 
     def test_generic_profile_spend(self):
         assets = census.adapter_usage_csv(
@@ -189,11 +240,17 @@ class TestSeatJoin(unittest.TestCase):
         self.assertEqual(census.normalize_identity(""), "")
 
     def test_cross_vendor_join_survives_deidentification(self):
-        assets = []
-        for spec in [("Claude", "claude", "usage_claude.csv"),
-                     ("GitHub Copilot", "copilot", "usage_copilot.csv")]:
-            assets += census.adapter_usage_csv(
-                os.path.join(SAMPLES, spec[2]), spec[0], spec[1], True, "salt")
+        with tempfile.TemporaryDirectory() as td:
+            claude = claude_csv(td, [("ada", ACTIVE), ("ben", ACTIVE), ("carla", IDLE),
+                                     ("dev", ACTIVE), ("erin", IDLE), ("farid", ACTIVE),
+                                     ("gina", IDLE)])
+            copilot = copilot_csv(td, [("ada", ACTIVE), ("ben", IDLE), ("carla", IDLE),
+                                       ("dev", ACTIVE), ("erin", IDLE), ("gina", IDLE),
+                                       ("hank", IDLE)])
+            assets = []
+            for path, label, profile in [(claude, "Claude", "claude"),
+                                         (copilot, "GitHub Copilot", "copilot")]:
+                assets += census.adapter_usage_csv(path, label, profile, True, "salt")
         rows = census.cross_vendor_seats(assets)
         # ada/ben/carla/dev/erin/gina hold seats at both vendors; hank copilot-only
         self.assertEqual(len(rows), 6)

@@ -16,8 +16,9 @@ actually built with AI, across every tool, clusters the patterns, and puts every
 asset in one of four buckets: **SCALE, MERGE, SUNSET, BUILD**. Evidence first.
 Runs entirely inside your walls. You own the output.
 
-Read [POSITIONING.md](POSITIONING.md) for the why. Read [SCOPING.md](SCOPING.md)
-for the architecture, privacy posture, and engagement runbook.
+Read [POSITIONING.md](POSITIONING.md) for the why. Read
+[ARCHITECTURE.md](ARCHITECTURE.md) for the architecture, the privacy posture,
+and how to run one.
 
 ## Install
 
@@ -96,7 +97,7 @@ python3 census.py \
   --out out/ --deidentify
 ```
 
-Output: `out/report.md` (the human deliverable) and `out/report.json` (every
+Output: `out/report.md` (the human-readable report) and `out/report.json` (every
 asset, signal, cluster, verdict, and rationale, machine-readable).
 
 ## The org config
@@ -110,7 +111,7 @@ zero code changes.
 
 `--check` preflights the config without collecting anything: missing files,
 unset env vars, unauthenticated CLIs, plain-http GitLab URLs, and secrets that
-should not be in a config file all fail loudly before the engagement starts.
+should not be in a config file all fail loudly before a run starts.
 
 ## Data sources
 
@@ -148,7 +149,7 @@ Three interchangeable transports; pick what your environment allows:
 # a. local claude CLI
 python3 census.py --config census.json
 
-# b. round-trip through any approved engine (in-VPC endpoint, analyst review)
+# b. round-trip through any approved engine (in-VPC endpoint, human review)
 python3 census.py --config census.json --emit-inventory out/inventory.json
 #    produce out/analysis.json against the contract embedded in the inventory
 python3 census.py --config census.json --analysis out/analysis.json

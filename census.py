@@ -4,8 +4,8 @@ AI Census — evidence-first discovery of an org's AI build-out.
 
 Harness-agnostic: ingests artifacts regardless of which AI tool produced them
 (Claude Code, Cursor, GitHub Copilot, Microsoft Copilot, custom GPTs, no-code
-agents, ...). Runs entirely inside the client's environment; the only network
-calls are to the client's own git host (optional) and, optionally, a local
+agents, ...). Runs entirely inside your own environment; the only network
+calls are to your own git host (optional) and, optionally, a local
 `claude` CLI for the pattern-analysis pass.
 
 Pipeline: adapters -> normalizer -> pattern pass (LLM or heuristic) ->
@@ -970,7 +970,7 @@ Rules:
 def build_inventory(assets, clusters, initiatives):
     """The exact payload the pattern engine reasons over — also emittable via
     --emit-inventory so any harness (a Claude Code session, an in-VPC endpoint,
-    a human analyst) can produce the analysis and hand it back via --analysis."""
+    a human reviewer) can produce the analysis and hand it back via --analysis."""
     slim = [{k: a[k] for k in ("id", "source", "name", "description", "team",
                                "harnesses", "status", "users_claimed",
                                "spend_monthly", "signals")} for a in assets]

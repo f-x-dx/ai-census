@@ -66,10 +66,15 @@ the same standard: does it work, does anyone use it, does it already exist.
 
 ## Where it fits
 
-The census is phase one of AI transformation done in the right order:
+Getting AI right in a large org happens in an order:
 
 **See** what exists. **Decide** what scales, merges, sunsets. **Build** what is
 actually missing. **Govern** so the sprawl never grows back.
 
-Most transformation programs start at build. That is why 95% of enterprise AI
-pilots show no measurable return. Start at see.
+Most programmes start at build, which is how you end up with the sprawl in the
+first place. MIT's 2025 study of enterprise AI found roughly 95% of pilots
+delivered no measurable P&L return. You cannot fix a portfolio you have never
+seen. Start at see.
+
+The census is the seeing, and it is yours. It is MIT licensed, it runs on your
+infrastructure, and nothing about it requires anyone's help to operate.
